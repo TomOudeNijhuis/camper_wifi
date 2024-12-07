@@ -5,8 +5,7 @@ After=network.target
 [Service]
 ExecStart=/usr/bin/python3 /home/tom/camper_wifi/wifi_checker.py
 Restart=on-failure
-User=tom
-Group=tom
+User=root
 WorkingDirectory=/home/tom/camper_wifi/
 
 
