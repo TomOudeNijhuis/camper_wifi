@@ -6,8 +6,16 @@ import re
 import time
 import json
 import os
+import logging
 
 INTERFACE = "wlan1"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+logging.basicConfig(
+    filename=os.path.join(SCRIPT_DIR, "wifi_checker.log"),
+    level=logging.ERROR,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
 
 
 def get_available_networks():
@@ -81,8 +89,7 @@ def connect_to_network(ssid, password=None, interface=INTERFACE):
 
 
 def get_stored_networks():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    networks_path = os.path.join(script_dir, "networks.json")
+    networks_path = os.path.join(SCRIPT_DIR, "networks.json")
 
     return json.load(open(networks_path))
 
@@ -109,6 +116,7 @@ def run_watcher(interface):
                     print("No preferred networks found.")
         except Exception as ex:
             print(f"An error occurred: {ex}")
+            logging.exception("An error occurred in run_watcher")
 
         time.sleep(300)  # Wait for 5 minutes before checking again
 
