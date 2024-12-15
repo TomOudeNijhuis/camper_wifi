@@ -5,6 +5,7 @@ import subprocess
 import re
 import time
 import json
+import os
 
 INTERFACE = "wlan1"
 
@@ -80,7 +81,10 @@ def connect_to_network(ssid, password=None, interface=INTERFACE):
 
 
 def get_stored_networks():
-    return json.load(open("networks.json"))
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    networks_path = os.path.join(script_dir, "networks.json")
+
+    return json.load(open(networks_path))
 
 
 def run_watcher(interface):
