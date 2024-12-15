@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import argparse
 import subprocess
 import re
 import time
@@ -44,7 +47,7 @@ def get_connected_network():
     return None
 
 
-def connect_to_network(ssid, password=None, interface="wlan0"):
+def connect_to_network(ssid, password=None, interface=INTERFACE):
     # Build the command
     command = ["nmcli", "dev", "wifi", "connect", ssid, "ifname", interface]
     if password:
@@ -60,7 +63,7 @@ def connect_to_network(ssid, password=None, interface="wlan0"):
         print(f"Failed to connect to {ssid}.\nError: {result.stderr.strip()}")
 
 
-def main():
+def run_watcher(interface):
     while True:
         try:
             connected = get_connected_network()
@@ -75,7 +78,7 @@ def main():
                     if ssid in stored:
                         print(f"Attempting to connect to {ssid}...")
                         connect_to_network(
-                            ssid, password=stored[ssid], interface=INTERFACE
+                            ssid, password=stored[ssid], interface=interface
                         )
                         break
                 else:
@@ -84,6 +87,46 @@ def main():
             print(f"An error occurred: {ex}")
 
         time.sleep(300)  # Wait for 5 minutes before checking again
+
+
+def main():
+    parser = argparse.ArgumentParser(description="WiFi Checker")
+    parser.add_argument(
+        "--scan", action="store_true", help="Scan for available networks"
+    )
+    parser.add_argument(
+        "--connected", action="store_true", help="To which network are we connected?"
+    )
+    parser.add_argument(
+        "--connect", metavar="SSID", help="Connect to a specified network"
+    )
+    parser.add_argument(
+        "--password", metavar="PASSWORD", help="Password for the specified network"
+    )
+    parser.add_argument(
+        "--interface",
+        metavar="INTERFACE",
+        default=INTERFACE,
+        help="Network interface to use",
+    )
+
+    args = parser.parse_args()
+
+    if args.scan:
+        available = get_available_networks()
+        print("Available networks:")
+        for ssid in available:
+            print(ssid)
+    elif args.connected:
+        connected = get_connected_network()
+        if connected:
+            print(f"Connected to {connected}.")
+        else:
+            print("Not connected to any network.")
+    elif args.connect and args.password:
+        connect_to_network(args.connect, args.password, args.interface)
+    else:
+        run_watcher(args.interface)
 
 
 if __name__ == "__main__":
