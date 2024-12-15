@@ -47,6 +47,22 @@ def get_connected_network():
     return None
 
 
+def get_wifi_interfaces():
+    result = subprocess.run(
+        ["nmcli", "-t", "-f", "DEVICE,TYPE", "device"],
+        stdout=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+    output = result.stdout.strip()
+    interfaces = []
+    for line in output.split("\n"):
+        device, dev_type = line.split(":")
+        if dev_type == "wifi":
+            interfaces.append(device)
+    return interfaces
+
+
 def connect_to_network(ssid, password=None, interface=INTERFACE):
     # Build the command
     command = ["nmcli", "dev", "wifi", "connect", ssid, "ifname", interface]
@@ -63,6 +79,10 @@ def connect_to_network(ssid, password=None, interface=INTERFACE):
         print(f"Failed to connect to {ssid}.\nError: {result.stderr.strip()}")
 
 
+def get_stored_networks():
+    return json.load(open("networks.json"))
+
+
 def run_watcher(interface):
     while True:
         try:
@@ -72,7 +92,7 @@ def run_watcher(interface):
             else:
                 print("No active connection. Scanning for available networks...")
                 available = get_available_networks()
-                stored = json.load(open("networks.json"))
+                stored = get_stored_networks()
 
                 for ssid in available:
                     if ssid in stored:
@@ -95,8 +115,12 @@ def main():
         "--scan", action="store_true", help="Scan for available networks"
     )
     parser.add_argument(
-        "--connected", action="store_true", help="To which network are we connected?"
+        "--connected", action="store_true", help="Show connected wifi network"
     )
+    parser.add_argument(
+        "--wifi", action="store_true", help="List available Wi-Fi interfaces"
+    )
+    parser.add_argument("--stored", action="store_true", help="Show stored networks")
     parser.add_argument(
         "--connect", metavar="SSID", help="Connect to a specified network"
     )
@@ -123,9 +147,20 @@ def main():
             print(f"Connected to {connected}.")
         else:
             print("Not connected to any network.")
+    elif args.wifi:
+        interfaces = get_wifi_interfaces()
+        print("Wi-Fi interfaces:")
+        for interface in interfaces:
+            print(interface)
+    elif args.stored:
+        stored = get_stored_networks()
+        print("Stored networks:")
+        for ssid, password in stored.items():
+            print(f"{ssid}: {password}")
     elif args.connect and args.password:
         connect_to_network(args.connect, args.password, args.interface)
     else:
+        print("Starting watcher...")
         run_watcher(args.interface)
 
 
