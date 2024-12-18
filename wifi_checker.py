@@ -49,9 +49,15 @@ def get_connected_network():
     )
     # Parse the output to find the active connection
     for line in result.stdout.splitlines():
-        active, ssid = line.split(":", 1)
-        if active == "yes":
-            return ssid
+        if not line:
+            continue
+
+        try:
+            active, ssid = line.split(":", 1)
+            if active == "yes":
+                return ssid
+        except Exception:
+            logging.error(f"Error decoding {line}", exc_info=True)
 
     return None
 
@@ -116,7 +122,7 @@ def run_watcher(interface):
                     print("No preferred networks found.")
         except Exception as ex:
             print(f"An error occurred: {ex}")
-            logging.exception("An error occurred in run_watcher")
+            logging.error("An error occurred in run_watcher", exc_info=True)
 
         time.sleep(300)  # Wait for 5 minutes before checking again
 
